@@ -1,14 +1,43 @@
 import math
+import typing
+from scipy.special import exp1
+
+
+EULER_GAMMA = 0.5772156649015329
+"""Euler-Mascheroni constant."""
+
+def exponential_integral(x: float) -> float:
+    """
+    Adaptive evaluation of Ei(-x) (or equivalently -E1(x)) used in
+    reservoir engineering dimensionless pressure calculations.
+
+    For small x, the logarithmic approximation is used:
+        Ei(-x) ≈ -γ - ln(x), valid when x << 1
+    Otherwise, the exact computation via scipy.special.exp1 is used.
+
+    :param x: Argument to the exponential integral function (must be positive).
+    :return: Value of Ei(-x)
+    :raises ValueError: If x is not positive.
+    """
+    if x <= 0:
+        raise ValueError("x must be positive.")
+
+    # Logarithmic approximation region (log approximately holds for x < 0.01 with error < 0.01)
+    if x < 0.01:  # threshold can be tuned depending on desired accuracy
+        return -EULER_GAMMA - math.log(x)
+
+    # Use scipy's exp1 for stable and accurate evaluation
+    return -exp1(x)
 
 
 def compute_dimensionless_pressure(
     alpha: float,
-    exponential_integral: float,
     dimensionless_length: float,
     dimensionless_wellbore_radius: float,
     dimensionless_time: float,
     wellbore_storage_constant: float,
     distance_to_boundary: float,
+    exponential_integral_func: typing.Callable[[float], float] = exponential_integral,
     skin_factor: float = 0.0,
 ) -> float:
     """
@@ -22,7 +51,10 @@ def compute_dimensionless_pressure(
         - pD: Dimensionless pressure
         - α: Alpha parameter
         - LD: Dimensionless length
-        - Ei: Exponential integral
+        - Ei(-x): Exponential integral
+        - x: Argument of the exponential integral
+            x = r_wD^2 / (4 * tD / CD) for the first term
+            x = d^2 / tD for the third term
         - r_wD: Dimensionless wellbore radius
         - tD: Dimensionless time
         - CD: Wellbore storage constant
@@ -30,31 +62,25 @@ def compute_dimensionless_pressure(
         - d: Distance to constant boundary
 
     :param alpha: Alpha parameter.
-    :param exponential_integral: Exponential integral value.
     :param dimensionless_length: Dimensionless length parameter.
     :param dimensionless_wellbore_radius: Dimensionless wellbore radius.
     :param dimensionless_time: Dimensionless time parameter.
     :param wellbore_storage_constant: Wellbore storage constant.
     :param distance_to_boundary: Distance to constant boundary.
+    :param exponential_integral_func: Function to compute the exponential integral (default is `exponential_integral`).
     :param skin_factor: Skin factor (default is 0.0).
     """
     if dimensionless_time <= 0:
         raise ValueError("Dimensionless time must be greater than zero.")
 
     alpha_term = alpha / (4 * dimensionless_length)
-    first_term = (
-        -alpha_term
-        * exponential_integral
-        * (
-            (-(dimensionless_wellbore_radius**2))
-            / (4 * dimensionless_time / wellbore_storage_constant)
-        )
+    x_first_term = (dimensionless_wellbore_radius**2) / (
+        4 * dimensionless_time / wellbore_storage_constant
     )
-    third_term = (
-        alpha_term
-        * exponential_integral
-        * (-(distance_to_boundary**2) / dimensionless_time)
-    )
+    first_term = -alpha_term * exponential_integral_func(x_first_term)
+
+    x_third_term = distance_to_boundary**2 / dimensionless_time
+    third_term = alpha_term * exponential_integral_func(x_third_term)
     return first_term + skin_factor + third_term
 
 
