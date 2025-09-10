@@ -1,5 +1,4 @@
 import math
-from tkinter import E
 import typing
 from scipy.special import expi
 
@@ -34,7 +33,6 @@ def exponential_integral(x: float) -> float:
 
 Ei = exponential_integral  # Alias for convenience
 
-print(Ei(5))  # Example usage
 
 def compute_dimensionless_pressure(
     alpha: float,
