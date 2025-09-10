@@ -3,10 +3,6 @@ import typing
 from scipy.special import expi
 
 
-EULER_GAMMA = 0.5772156649015329
-"""Euler-Mascheroni constant."""
-
-
 def exponential_integral(x: float) -> float:
     """
     Adaptive evaluation of Ei(-x) (or equivalently -E1(x)) used in
@@ -24,8 +20,8 @@ def exponential_integral(x: float) -> float:
         raise ValueError("x must be positive.")
 
     # Logarithmic approximation region (log approximately holds for x < 0.01 with error < 0.01)
-    if x < 0.01:  # threshold can be tuned depending on desired accuracy
-        return math.log(x) + EULER_GAMMA
+    if x <= 0.01:  # threshold can be tuned depending on desired accuracy
+        return math.log(1.781 * x)
 
     # Use scipy's expi for stable and accurate evaluation
     return expi(-x)
@@ -33,7 +29,6 @@ def exponential_integral(x: float) -> float:
 
 Ei = exponential_integral  # Alias for convenience
 
-print(Ei(0.001))  # Pre-evaluate to avoid first-call overhead in performance-critical paths
 
 def compute_dimensionless_pressure(
     alpha: float,
