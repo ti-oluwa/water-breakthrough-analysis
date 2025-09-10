@@ -779,10 +779,10 @@ def main():
         "Alpha (α) - Constant",
         min_value=None,
         value=2.0,
+        format="%.9f",
         help="**Alpha parameter** - A dimensionless parameter that characterizes the reservoir system. Must be positive. Typical range: 0.1 - 10.0. This parameter remains constant.",
     )
 
-    
     # Now define parameter inputs with conditional display
     st.divider()
     st.subheader("Parameter Configuration")
@@ -876,6 +876,7 @@ def main():
                 "Dimensionless Length (LD) - Base Value",
                 min_value=None,
                 value=1.0,
+                format="%.9f",
                 help="**Dimensionless length parameter** - Base value when not varying this parameter. Characterizes the horizontal well length relative to reservoir extent. Must be positive. Typical range: 100 - 10,000",
             )
         else:
@@ -893,6 +894,7 @@ def main():
                 "Dimensionless Wellbore Radius (r_wD) - Base Value",
                 min_value=None,
                 value=0.1,
+                format="%.9f",
                 help="**Dimensionless wellbore radius** - Base value when not varying this parameter. Ratio of horizontal well radius to characteristic length. Must be positive. Typical range: 0.01 - 1.0",
             )
         else:
@@ -913,6 +915,7 @@ def main():
                 "Wellbore Storage Constant (CD) - Base Value",
                 min_value=0.001,
                 value=1.0,
+                format="%.9f",
                 help="**Wellbore storage constant** - Base value when not varying this parameter. Dimensionless parameter representing horizontal wellbore storage effects on water breakthrough. Must be positive. Typical range: 0.01 - 1000",
             )
         else:
@@ -928,7 +931,8 @@ def main():
             distance_to_boundary = st.number_input(
                 "Distance to Water Boundary (d) - Base Value",
                 min_value=0.001,
-                value=500.0,
+                value=5.0,
+                format="%.9f",
                 help="**Distance to water boundary** - Base value when not varying this parameter. Distance from horizontal well to the constant pressure water boundary. Critical for breakthrough timing. Typical range: 100 - 10,000 ft",
             )
         else:
@@ -942,6 +946,7 @@ def main():
             skin_factor = st.number_input(
                 "Skin Factor (S) - Base Value",
                 value=0.0,
+                format="%.9f",
                 help="**Skin factor** - Base value when not varying this parameter. Dimensionless parameter representing near-wellbore condition affecting water breakthrough. Positive = damage, Negative = stimulation. Typical range: -5.0 to +10.0",
             )
         else:
@@ -964,27 +969,24 @@ def main():
     with time_col1:
         min_time = st.number_input(
             "Min Time (tD)",
-            min_value=0.0001,
             value=0.001,
-            format="%.4f",
+            format="%.9f",
             help="**Minimum dimensionless time** - Beginning of breakthrough analysis period. Must be positive.",
         )
 
     with time_col2:
         max_time = st.number_input(
             "Max Time (tD)",
-            min_value=0.0001,
             value=1.0,
-            format="%.4f",
+            format="%.9f",
             help="**Maximum dimensionless time** - End of breakthrough analysis period. Must be greater than min time.",
         )
 
     with time_col3:
         time_step = st.number_input(
             "Time Step Size",
-            min_value=0.0001,
             value=0.01,
-            format="%.4f",
+            format="%.9f",
             help="**Time step size** - Step size for time increments. Smaller steps = more data points.",
         )
 
@@ -1012,7 +1014,6 @@ def main():
         help="Click to compute dimensionless pressure values for water breakthrough analysis across the specified ranges",
     ):
         try:
-            # Validate reservoir parameters
             reservoir_params = ReservoirParameters(
                 alpha=alpha,
                 dimensionless_length=dimensionless_length,
@@ -1021,8 +1022,6 @@ def main():
                 distance_to_boundary=distance_to_boundary,
                 skin_factor=skin_factor,
             )
-
-            # Validate time parameters
             time_params = TimeParameters(
                 min_time=min_time,
                 max_time=max_time,
@@ -1033,7 +1032,6 @@ def main():
             time_array = create_time_array(time_params=time_params)
 
             if use_parameter_variation:
-                # Validate varying parameter
                 varying_param = VaryingParameter(
                     parameter_name=param_options[selected_param],
                     min_value=param_min,
@@ -1041,7 +1039,6 @@ def main():
                     step_size=param_step,
                 )
 
-                # Create parameter array
                 param_array = create_parameter_array(varying_param=varying_param)
 
                 # Compute results with varying parameters

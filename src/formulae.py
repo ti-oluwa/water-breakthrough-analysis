@@ -6,6 +6,7 @@ from scipy.special import exp1
 EULER_GAMMA = 0.5772156649015329
 """Euler-Mascheroni constant."""
 
+
 def exponential_integral(x: float) -> float:
     """
     Adaptive evaluation of Ei(-x) (or equivalently -E1(x)) used in
