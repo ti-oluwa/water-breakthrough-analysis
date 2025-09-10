@@ -1,4 +1,5 @@
 import math
+from tkinter import E
 import typing
 from scipy.special import expi
 
@@ -28,8 +29,12 @@ def exponential_integral(x: float) -> float:
         return -(math.log(x) + EULER_GAMMA)
 
     # Use scipy's expi for stable and accurate evaluation
-    return expi(-x)
+    return -expi(-x)
 
+
+Ei = exponential_integral  # Alias for convenience
+
+print(Ei(5))  # Example usage
 
 def compute_dimensionless_pressure(
     alpha: float,
@@ -38,7 +43,7 @@ def compute_dimensionless_pressure(
     dimensionless_time: float,
     wellbore_storage_constant: float,
     distance_to_boundary: float,
-    exponential_integral_func: typing.Callable[[float], float] = exponential_integral,
+    exponential_integral_func: typing.Callable[[float], float] = Ei,
     skin_factor: float = 0.0,
 ) -> float:
     """
