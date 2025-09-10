@@ -1114,18 +1114,18 @@ def main():
                 raise ValueError(
                     "Time array must contain at least two points. Adjust time range or step settings."
                 )
-            if time_array_size > 2000:
+            if time_array_size > 800:
                 st.warning(
                     f"⚠️ Time array contains {time_array_size} points, which may impact performance. Consider reducing the number of points or size of range."
                 )
-                if time_array_size > 5000 and step_type == "linear":
+                if time_array_size > 1000 and step_type == "linear":
                     raise ValueError(
-                        "Number of time points exceeds 5000 for linear steps. Please reduce the range or increase step size."
+                        "Number of time points exceeds 1000 for linear steps. Please reduce the range or increase step size."
                         " Or consider using exponential steps"
                     )
-                elif time_array_size > 5000 and step_type == "exponential":
+                elif time_array_size > 1000 and step_type == "exponential":
                     raise ValueError(
-                        "Number of time points exceeds 5000 for exponential steps. Please reduce the range or number of points."
+                        "Number of time points exceeds 1000 for exponential steps. Please reduce the range or number of points."
                     )
 
             # Show time array info
