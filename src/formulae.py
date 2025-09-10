@@ -1,6 +1,6 @@
 import math
 import typing
-from scipy.special import exp1
+from scipy.special import expi
 
 
 EULER_GAMMA = 0.5772156649015329
@@ -14,7 +14,7 @@ def exponential_integral(x: float) -> float:
 
     For small x, the logarithmic approximation is used:
         Ei(-x) ≈ -γ - ln(x), valid when x << 1
-    Otherwise, the exact computation via scipy.special.exp1 is used.
+    Otherwise, the exact computation via scipy.special.expi is used.
 
     :param x: Argument to the exponential integral function (must be positive).
     :return: Value of Ei(-x)
@@ -27,8 +27,8 @@ def exponential_integral(x: float) -> float:
     if x < 0.01:  # threshold can be tuned depending on desired accuracy
         return -(math.log(x) + EULER_GAMMA)
 
-    # Use scipy's exp1 for stable and accurate evaluation
-    return -exp1(x)
+    # Use scipy's expi for stable and accurate evaluation
+    return expi(-x)
 
 
 def compute_dimensionless_pressure(

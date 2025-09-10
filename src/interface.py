@@ -1109,13 +1109,31 @@ def main():
 
             # Create time array
             time_array = create_time_array(time_params=time_params)
+            time_array_size = time_array.size
+            if time_array_size < 2:
+                raise ValueError(
+                    "Time array must contain at least two points. Adjust time range or step settings."
+                )
+            if time_array_size > 2000:
+                st.warning(
+                    f"⚠️ Time array contains {time_array_size} points, which may impact performance. Consider reducing the number of points or size of range."
+                )
+                if time_array_size > 5000 and step_type == "linear":
+                    raise ValueError(
+                        "Number of time points exceeds 5000 for linear steps. Please reduce the range or increase step size."
+                        " Or consider using exponential steps"
+                    )
+                elif time_array_size > 5000 and step_type == "exponential":
+                    raise ValueError(
+                        "Number of time points exceeds 5000 for exponential steps. Please reduce the range or number of points."
+                    )
 
             # Show time array info
             if step_type == "exponential":
                 st.info(
-                    f"✅ Generated {len(time_array)} logarithmically spaced time points from {time_array[0]:.6f} to {time_array[-1]:.6f}"
+                    f"✅ Generated {time_array_size} logarithmically spaced time points from {time_array[0]:.6f} to {time_array[-1]:.6f}"
                 )
-                if len(time_array) <= 10:
+                if time_array_size <= 10:
                     st.code(f"Time points: {[f'{t:.6f}' for t in time_array]}")
                 else:
                     preview_points = (
@@ -1126,9 +1144,9 @@ def main():
                     )
             else:
                 st.info(
-                    f"✅ Generated {len(time_array)} linearly spaced time points with step size {time_step:.6f}"
+                    f"✅ Generated {time_array_size} linearly spaced time points with step size {time_step:.6f}"
                 )
-                if len(time_array) <= 10:
+                if time_array_size <= 10:
                     st.code(f"Time points: {[f'{t:.6f}' for t in time_array]}")
                 else:
                     preview_points = (
