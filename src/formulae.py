@@ -28,7 +28,7 @@ def exponential_integral(x: float) -> float:
         return -(math.log(x) + EULER_GAMMA)
 
     # Use scipy's expi for stable and accurate evaluation
-    return -expi(-x)
+    return expi(-x)
 
 
 Ei = exponential_integral  # Alias for convenience
