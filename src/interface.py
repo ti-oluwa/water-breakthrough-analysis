@@ -74,6 +74,17 @@ class TimeParameters(BaseModel):
     step_size: float = Field(
         ..., gt=0, description="Step size for time range", title="Step Size"
     )
+    step_type: typing.Literal["linear", "exponential"] = Field(
+        default="linear",
+        description="Type of step progression: 'linear' or 'exponential'",
+        title="Step Type",
+    )
+    num_points: int = Field(
+        default=100,
+        gt=0,
+        description="Number of points for exponential spacing",
+        title="Number of Points",
+    )
 
     @field_validator("max_time")
     @classmethod
@@ -88,6 +99,13 @@ class TimeParameters(BaseModel):
         if info.data.get("min_time") and info.data.get("max_time"):
             if v >= (info.data.get("max_time") - info.data.get("min_time")):
                 raise ValueError("Step size must be smaller than the time range")
+        return v
+
+    @field_validator("step_type")
+    @classmethod
+    def validate_step_type(cls, v):
+        if v not in ["linear", "exponential"]:
+            raise ValueError("step_type must be either 'linear' or 'exponential'")
         return v
 
 
@@ -116,12 +134,23 @@ class VaryingParameter(BaseModel):
 
 
 def create_time_array(time_params: TimeParameters) -> np.ndarray:
-    """Create linearly spaced time array based on min/max/step."""
-    return np.arange(
-        time_params.min_time,
-        time_params.max_time + time_params.step_size,
-        time_params.step_size,
-    )
+    """Create time array based on specified step type (linear or exponential)."""
+    if time_params.step_type == "linear":
+        # Linear spacing using step size
+        return np.arange(
+            time_params.min_time,
+            time_params.max_time + time_params.step_size,
+            time_params.step_size,
+        )
+    elif time_params.step_type == "exponential":
+        # Logarithmic/exponential spacing using number of points
+        return np.logspace(
+            np.log10(time_params.min_time),
+            np.log10(time_params.max_time),
+            time_params.num_points,
+        )
+    else:
+        raise ValueError(f"Unsupported step_type: {time_params.step_type}")
 
 
 def create_parameter_array(varying_param: VaryingParameter) -> np.ndarray:
@@ -960,35 +989,83 @@ def main():
     st.subheader("Breakthrough Time Range")
     st.markdown("*Configure the time range for water breakthrough analysis*")
 
-    st.info(
-        "💡 **Tip:** Use appropriate step size for time range. Smaller steps provide more detailed analysis but take longer to compute."
+    # Step type selection
+    step_type = st.selectbox(
+        "Time Step Type",
+        ["exponential", "linear"],
+        index=0,
+        help="**Linear**: Uniform time steps. **Exponential**: Logarithmically spaced points for better coverage across time decades.",
     )
 
-    time_col1, time_col2, time_col3 = st.columns(3)
-
-    with time_col1:
-        min_time = st.number_input(
-            "Min Time (tD)",
-            value=0.001,
-            format="%.9f",
-            help="**Minimum dimensionless time** - Beginning of breakthrough analysis period. Must be positive.",
+    if step_type == "linear":
+        st.info(
+            "💡 **Linear Steps:** Uniform time increments. Good for detailed analysis over specific time ranges."
         )
 
-    with time_col2:
-        max_time = st.number_input(
-            "Max Time (tD)",
-            value=1.0,
-            format="%.9f",
-            help="**Maximum dimensionless time** - End of breakthrough analysis period. Must be greater than min time.",
+        time_col1, time_col2, time_col3 = st.columns(3)
+
+        with time_col1:
+            min_time = st.number_input(
+                "Min Time (tD)",
+                value=0.001,
+                format="%.9f",
+                help="**Minimum dimensionless time** - Beginning of breakthrough analysis period. Must be positive.",
+            )
+
+        with time_col2:
+            max_time = st.number_input(
+                "Max Time (tD)",
+                value=1.0,
+                format="%.9f",
+                help="**Maximum dimensionless time** - End of breakthrough analysis period. Must be greater than min time.",
+            )
+
+        with time_col3:
+            time_step = st.number_input(
+                "Time Step Size",
+                value=0.01,
+                format="%.9f",
+                help="**Time step size** - Step size for time increments. Smaller steps = more data points.",
+            )
+
+        # Set default values for exponential parameters
+        num_points = 100
+
+    else:  # exponential
+        st.info(
+            "💡 **Exponential Steps:** Logarithmically spaced points. Ideal for water breakthrough analysis across multiple time decades."
         )
 
-    with time_col3:
-        time_step = st.number_input(
-            "Time Step Size",
-            value=0.01,
-            format="%.9f",
-            help="**Time step size** - Step size for time increments. Smaller steps = more data points.",
-        )
+        time_col1, time_col2, time_col3 = st.columns(3)
+
+        with time_col1:
+            min_time = st.number_input(
+                "Min Time (tD)",
+                value=0.001,
+                format="%.9f",
+                help="**Minimum dimensionless time** - Beginning of breakthrough analysis period. Must be positive.",
+            )
+
+        with time_col2:
+            max_time = st.number_input(
+                "Max Time (tD)",
+                value=1.0,
+                format="%.9f",
+                help="**Maximum dimensionless time** - End of breakthrough analysis period. Must be greater than min time.",
+            )
+
+        with time_col3:
+            num_points = st.number_input(
+                "Number of Points",
+                min_value=10,
+                max_value=1000,
+                value=100,
+                step=10,
+                help="**Number of logarithmically spaced points** - More points = higher resolution. Recommended: 50-200 points.",
+            )
+
+        # Set default step size (not used for exponential but required for validation)
+        time_step = (max_time - min_time) / num_points
 
     # Validate inputs and compute results
     st.divider()
@@ -1026,10 +1103,40 @@ def main():
                 min_time=min_time,
                 max_time=max_time,
                 step_size=time_step,
+                step_type=step_type,
+                num_points=num_points,
             )
 
             # Create time array
             time_array = create_time_array(time_params=time_params)
+
+            # Show time array info
+            if step_type == "exponential":
+                st.info(
+                    f"✅ Generated {len(time_array)} logarithmically spaced time points from {time_array[0]:.6f} to {time_array[-1]:.6f}"
+                )
+                if len(time_array) <= 10:
+                    st.code(f"Time points: {[f'{t:.6f}' for t in time_array]}")
+                else:
+                    preview_points = (
+                        list(time_array[:5]) + ["..."] + list(time_array[-3:])
+                    )
+                    st.code(
+                        f"Time points preview: {[f'{t:.6f}' if isinstance(t, (int, float)) else t for t in preview_points]}"
+                    )
+            else:
+                st.info(
+                    f"✅ Generated {len(time_array)} linearly spaced time points with step size {time_step:.6f}"
+                )
+                if len(time_array) <= 10:
+                    st.code(f"Time points: {[f'{t:.6f}' for t in time_array]}")
+                else:
+                    preview_points = (
+                        list(time_array[:5]) + ["..."] + list(time_array[-3:])
+                    )
+                    st.code(
+                        f"Time points preview: {[f'{t:.6f}' if isinstance(t, (int, float)) else t for t in preview_points]}"
+                    )
 
             if use_parameter_variation:
                 varying_param = VaryingParameter(
@@ -1609,10 +1716,11 @@ def main():
     with st.expander(
         "ℹ️ Water Breakthrough Analysis Information & Parameter Guide", expanded=False
     ):
-        tab1, tab2, tab3 = st.tabs(
+        tab1, tab2, tab3, tab4 = st.tabs(
             [
                 "📐 Mathematical Models",
                 "📋 Parameter Guide",
+                "⏱️ Time Step Types",
                 "🌊 Water Breakthrough Interpretation",
             ]
         )
@@ -1656,6 +1764,35 @@ def main():
             """)
 
         with tab3:
+            st.markdown("""
+            ### Time Step Types for Water Breakthrough Analysis:
+            
+            **🔢 Linear Time Steps:**
+            - **How it works:** Creates uniformly spaced time points: tD = min_time + n × step_size
+            - **Best for:** Detailed analysis over specific time ranges
+            - **Advantages:** 
+              - Predictable time intervals
+              - Good for zooming into specific breakthrough periods
+              - Easy to interpret step size
+            - **Example:** tD = [0.1, 0.2, 0.3, 0.4, 0.5] with step_size = 0.1
+            
+            **📈 Exponential (Logarithmic) Time Steps:**
+            - **How it works:** Creates logarithmically spaced time points across multiple decades
+            - **Best for:** Water breakthrough analysis spanning wide time ranges
+            - **Advantages:**
+              - Better coverage of early-time and late-time behavior
+              - Efficient representation across multiple time decades
+              - More points where breakthrough dynamics change rapidly
+            - **Example:** tD = [0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1.0] covering 3 decades
+            
+            **🌊 Recommendations for Water Breakthrough:**
+            - **Use Linear:** When analyzing specific breakthrough periods (e.g., 0.1 to 0.5 tD)
+            - **Use Exponential:** When studying full breakthrough behavior (e.g., 0.001 to 10 tD)
+            - **Exponential Benefits:** Captures wellbore storage (early time) and boundary effects (late time)
+            - **Points Guideline:** 50-100 points for exponential usually sufficient for smooth curves
+            """)
+
+        with tab4:
             st.markdown("""
             ### Water Breakthrough Analysis Interpretation:
             

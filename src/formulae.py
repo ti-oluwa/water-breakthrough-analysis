@@ -25,7 +25,7 @@ def exponential_integral(x: float) -> float:
 
     # Logarithmic approximation region (log approximately holds for x < 0.01 with error < 0.01)
     if x < 0.01:  # threshold can be tuned depending on desired accuracy
-        return -EULER_GAMMA - math.log(x)
+        return -(math.log(x) + EULER_GAMMA)
 
     # Use scipy's exp1 for stable and accurate evaluation
     return -exp1(x)
