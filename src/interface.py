@@ -942,7 +942,6 @@ def main():
         ):
             wellbore_storage_constant = st.number_input(
                 "Wellbore Storage Constant (CD) - Base Value",
-                min_value=0.001,
                 value=1.0,
                 format="%.9f",
                 help="**Wellbore storage constant** - Base value when not varying this parameter. Dimensionless parameter representing horizontal wellbore storage effects on water breakthrough. Must be positive. Typical range: 0.01 - 1000",
@@ -959,13 +958,12 @@ def main():
         ):
             distance_to_boundary = st.number_input(
                 "Distance to Water Boundary (d) - Base Value",
-                min_value=0.001,
                 value=5.0,
                 format="%.9f",
                 help="**Distance to water boundary** - Base value when not varying this parameter. Distance from horizontal well to the constant pressure water boundary. Critical for breakthrough timing. Typical range: 100 - 10,000 ft",
             )
         else:
-            distance_to_boundary = 500.0  # Default value when varying
+            distance_to_boundary = 1 # Default value when varying
             st.info(
                 "🔄 **Distance to Water Boundary (d)** is set to vary. Configure above in Parameter Variation section"
             )

@@ -23,9 +23,6 @@ def exponential_integral(x: float) -> float:
     if x <= 0.01:  # threshold can be tuned depending on desired accuracy
         return math.log(1.781 * x)
 
-    # if x > 10:  # Prevent overflow in expi for large x
-    #     return 0.0
-
     # Use scipy's expi for stable and accurate evaluation
     return expi(-x)
 
@@ -82,7 +79,7 @@ def compute_dimensionless_pressure(
     )
     first_term = -alpha_term * exponential_integral_func(x_first_term)
 
-    x_third_term = distance_to_boundary**2 / dimensionless_time
+    x_third_term = (distance_to_boundary**2) / dimensionless_time
     third_term = alpha_term * exponential_integral_func(x_third_term)
     return first_term + skin_factor + third_term
 
